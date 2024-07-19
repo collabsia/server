@@ -19,8 +19,8 @@ const mongouri = process.env.MONGO_URL;
 const jwt = require('jsonwebtoken');
 const jwt_key = process.env.JWT_SECRET;
 const oauth2Client = new OAuth2Client({
-  clientId: process.env.Gmail_ID,
-  clientSecret: process.env.Gmail_SECRET,
+  clientId: process.env.GMAIL_ID,
+  clientSecret: process.env.GMAIL_SECRET,
   redirectUri: process.env.URL
 });
 
@@ -29,15 +29,7 @@ oauth2Client.setCredentials({
 });
 
 
-const calendarOAuth2Client = new OAuth2Client({
-  clientId: process.env.CALENDAR_ID,
-  clientSecret: process.env.CALENDAR_SECRET,
-  redirectUri: process.env.URL
-});
 
-calendarOAuth2Client.setCredentials({
-  refresh_token: process.env.CALENDAR_REFRESH_TOKEN
-});
 
 const conn = mongoose.createConnection(mongouri);
 let gfs;
@@ -198,7 +190,7 @@ exports.memodetails = async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, PROCES.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
