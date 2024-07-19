@@ -34,7 +34,6 @@ exports.invite = async (req, res, next) => {
      
     const sender =user.name;
     const senderEmail =user.email;
-    const sender = `"${user.name}" <${user.email}>`;
     const savedCode = await Code.create({ code: code, role: role, recipient: recipient });
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
     const utf8Subject = `=?utf-8?B?${Buffer.from("Invitation From COT Department").toString('base64')}?=`;
