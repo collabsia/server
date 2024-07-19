@@ -15,7 +15,7 @@ const { google } = require('googleapis');
 const { OAuth2Client } = require('google-auth-library');
 const { ObjectId } = mongoose.Types;
 
-const mongouri = process.env.MONGO_URL;
+const mongouri = process.env.MONGO_URL || "mongodb+srv://User1:Test1234@cluster0.0zxzgnl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const jwt = require('jsonwebtoken');
 const jwt_key = process.env.JWT_SECRET;
 const oauth2Client = new OAuth2Client({
