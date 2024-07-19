@@ -144,7 +144,7 @@ exports.uploads = async (req, res, next) => {
           const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
           const utf8Subject = `=?utf-8?B?${Buffer.from('New Memo Notification').toString('base64')}?=`;
           const messageParts = [
-            `From: "${senderName}" <${senderEmail}>`,
+            `From: <${senderEmail}>`,
             `To: ${recipient.useremail}`,
             'Content-Type: text/html; charset=utf-8',
             'MIME-Version: 1.0',
