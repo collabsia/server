@@ -8,11 +8,11 @@ const jwt = require('jsonwebtoken');
 const CalendarEvent = require('../models/calendarevent')
 const jwt_key = process.env.JWT_SECRET;
 const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client("373547344231-uugg2iqm8p52tmq9iptiscn3905h1dlo.apps.googleusercontent.com");
+const client = new OAuth2Client(process.env.GMAIL_ID);
 
 const oauth2Client = new OAuth2Client(
-  process.env.Gmail_ID,
-  process.env.Gmail_SECRET,
+  process.env.GMAIL_ID,
+  process.env.GMAIL_SECRET,
   process.env.URL
 );
 
@@ -34,7 +34,7 @@ exports.invite = async (req, res, next) => {
      
     const sender =user.name;
     const senderEmail =user.email;
-    // const sender = `"${user.name}" <${user.email}>`;
+    const sender = `"${user.name}" <${user.email}>`;
     const savedCode = await Code.create({ code: code, role: role, recipient: recipient });
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
     const utf8Subject = `=?utf-8?B?${Buffer.from("Invitation From COT Department").toString('base64')}?=`;
@@ -73,7 +73,7 @@ exports.login = async (req, res, next) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: '373547344231-uugg2iqm8p52tmq9iptiscn3905h1dlo.apps.googleusercontent.com',
+      audience: process.env.GMAIL_ID,
     });
 
     const payload = ticket.getPayload();
