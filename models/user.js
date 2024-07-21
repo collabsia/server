@@ -28,10 +28,12 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-
 userSchema.methods.webtokenjwt = function() {
-  return webtoken.sign({ id: this.id }, process.env.JWT_SECRET, {
-  });
+  return webtoken.sign(
+    { id: this.id },
+    process.env.JWT_SECRET,
+    { expiresIn: '30m' } 
+  );
 };
 
 const User = mongoose.model("User", userSchema);
