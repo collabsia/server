@@ -190,7 +190,7 @@ exports.memodetails = async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(token, PROCES.env.JWT_SECRET);
+    const decoded = jwt.verify(token,jwt_key);
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
