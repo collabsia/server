@@ -34,6 +34,7 @@ exports.invite = async (req, res, next) => {
      
     const sender =user.name;
     const senderEmail =user.email;
+ 
     const savedCode = await Code.create({ code: code, role: role, recipient: recipient });
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
     const utf8Subject = `=?utf-8?B?${Buffer.from("Invitation From COT Department").toString('base64')}?=`;
@@ -44,7 +45,7 @@ exports.invite = async (req, res, next) => {
       `MIME-Version: 1.0`,
       `Subject: ${utf8Subject}`,
       '',
-      `Hello, I am the admin of this system. Please go to this site: https://client-lovat-five-36.vercel.app and use this code ${code}. Do not share this code with others.`
+      `Hello, I am the admin of this system. Please go to this site: https://collabsiaclient.vercel.app and use this code ${code}. Do not share this code with others.`
     ];
     const message = messageParts.join('\n');
     const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -236,7 +237,8 @@ exports.logout = (req, res) => {
         return res.status(403).json({ success: false, message: 'You do not have access!' });
       }
   
-      const users = await User.find();
+      const role = req.query.role || 0;
+      const users = await User.find(role != 0 ? { role } : {});
   
       if (users.length === 0) {
         return res.status(404).json({ success: false, message: 'No users found' });
@@ -248,7 +250,7 @@ exports.logout = (req, res) => {
       return res.status(500).json({ success: false, message: 'Internal server error' });
     }
   };
-
+  
 
 
   exports.getallroleuser = async (req, res, next) => {
@@ -473,7 +475,28 @@ exports.logout = (req, res) => {
 
 
 
-    exports.getalladmin = async (req, res, next) => {
+  
+
+  exports.getalladmin = async (req, res, next) => {
+    const token = req.query.token;
+  
+    try {
+      const decoded = jwt.verify(token, jwt_key);
+      const user = await User.findById(decoded.id);
+  
+      if (user.role !== 1 && user.role !== 2) {
+        return res.status(403).json({ success: false, message: 'You do not have access!' });
+      }
+  
+      const users = await User.find({ role:1 });
+  
+      return res.status(200).json({ success: true,message:"Successfully Retrieve!", users });
+    } catch (error) {
+      console.error('Error retrieving BSAT users:', error);
+      return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  };
+    exports.getallinstructors = async (req, res, next) => {
       const token = req.query.token;
     
       try {
@@ -484,42 +507,14 @@ exports.logout = (req, res) => {
           return res.status(403).json({ success: false, message: 'You do not have access!' });
         }
     
-        const users = await User.find({ role  :1});
-        if (users.length === 0) {
-          return res.status(404).json({ success: false, message: 'No users found' });
-        }
-        return res.status(200).json({ success: true,message:"Successfully Retrieve!", users});
+        const users = await User.find({ role:3 });
+    
+        return res.status(200).json({ success: true,message:"Successfully Retrieve!", users });
       } catch (error) {
         console.error('Error retrieving BSAT users:', error);
         return res.status(500).json({ success: false, message: 'Internal server error' });
       }
     };
-
-
-    exports.getallinstructors = async (req, res, next) => {
-      const token = req.query.token;
-      try {
-        const decoded = jwt.verify(token, jwt_key);
-        const user = await User.findById(decoded.id);
-    
-        if (user.role !== 1 && user.role !== 2) {
-          return res.status(403).json({ success: false, message: 'You do not have access!' });
-        }
-    
-        let users = await User.find({ role:3   });
-        if (users.length === 0) {
-          return res.status(404).json({ success: false, message: 'No users found' });
-        }
-    
-        return res.status(200).json({ success: true, message: "Successfully Retrieve!", users });
-      } catch (error) {
-        console.error('Error retrieving users:', error);
-        return res.status(500).json({ success: false, message: 'Internal server error' });
-      }
-    };
-  
-  
-
 
   //get all Bachelor of Science in Automotive Technology
   exports.getallbsat = async (req, res, next) => {
@@ -667,6 +662,30 @@ exports.updateuserrole = async (req, res, next) => {
   }
 };
 
+exports.updateDepartment = async (req, res, next) => {
+  const { department, token } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, jwt_key);
+    const userId = decoded.id;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { department: department } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(400).json({ success: false, message: 'Error updating department' });
+    }
+
+    res.json({ success: true, user: updatedUser });
+
+  } catch (error) {
+    console.error('Error updating user department:', error);
+    res.status(500).json({ success: false, message: 'Internal server error during department update.' });
+  }
+};
 exports.deleteuser = async (req, res, next) => {
   const token = req.body.token;
   const email = req.body.email;
