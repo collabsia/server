@@ -197,7 +197,7 @@ exports.logout = (req, res) => {
           redirectUrl = '/unregisteruser/dashboard';
           break;
       }
-      res.
+     
       res.json({ success: true, user: updatedUser, redirectUrl, message: "Login successful!" });
   
     } catch (error) {
