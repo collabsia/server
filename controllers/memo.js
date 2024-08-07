@@ -75,111 +75,111 @@ const formatDateTime = (dateString) => {
 const upload = multer({ storage: storage });
 
 
-
 exports.uploads = async (req, res, next) => {
-  try {
-    // Middleware to handle file upload
-    upload.single('file')(req, res, async (err) => {
-      if (err) {
-        console.error('File upload error:', err);
-        return res.status(500).json({ success: false, error: 'File upload failed.' });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded.' });
-      }
-
-      // Check if the uploaded file is a PDF
-      if (req.file.mimetype !== 'application/pdf') {
-        console.error('Unsupported file type:', req.file.mimetype);
-        return res.status(400).json({ success: false, error: 'Only PDF files are supported.' });
-      }
-
-      const token = req.body.token;
-      const decoded = jwt.verify(token, jwt_key);
-      const user = await User.findById(decoded.id);
-
-      if (!user) {
-        return res.status(404).json({ success: false, error: 'User not found.' });
-      }
-
-      const file = req.file;
-      const senderName = user.name;
-      const senderEmail = req.body.senderEmail || user.email; // Allow override of sender email
-      const content = req.file.filename;
-      const recipients = JSON.parse(req.body.recipients);
-      const title = req.body.title;
-      const startAt = req.body.startDate;
-      const endAt = req.body.endDate;
-
-      if (!senderName || !senderEmail || !startAt || !endAt) {
-        return res.status(400).json({ success: false, error: 'Sender email, name, start date, and end date are required.' });
-      }
-
-      const formattedStartAt = formatDateTime(startAt);
-      const formattedEndAt = formatDateTime(endAt);
-
-      try {
-        const memo = await Memo.create({
-          sender: senderName,
-          senderEmail,
-          content,
-          title,
-          startAt,
-          endAt,
-          recipients,
-          fileId: new ObjectId(file.id),
-        });
-
-        for (const recipient of recipients) {
-          await Notification.create({
-            recipientEmail: recipient.useremail,
-            recipientName: recipient.username,
-            senderEmail,
-            senderName: senderName,
-            type: 'New Memo',
-            memoId: memo._id,
-          });
-
-          const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-          const utf8Subject = `=?utf-8?B?${Buffer.from('New Memo Notification').toString('base64')}?=`;
-          const messageParts = [
-            `From: <${senderEmail}>`,
-            `To: ${recipient.useremail}`,
-            'Content-Type: text/html; charset=utf-8',
-            'MIME-Version: 1.0',
-            `Subject: ${utf8Subject}`,
-            '',
-            `Hello ${recipient.username},<br><br>This is to notify you that a new memo titled "${title}" has been created by ${senderName} (${senderEmail}).<br><br>Effective Dates:<br>Start Date: ${formattedStartAt}<br>End Date: ${formattedEndAt}<br><br>Please log in to the system at <a href="${process.env.URL}">${process.env.URL}</a> to view the details.<br><br>Thank you.`,
-          ];
-          const message = messageParts.join('\n');
-
-          try {
-            await gmail.users.messages.send({
-              userId: 'me', // Use 'me' to indicate the authenticated user
-              requestBody: {
-                raw: Buffer.from(message).toString('base64'),
-              },
-            });
-            console.log(`Email sent to ${recipient.useremail}`);
-          } catch (emailError) {
-            console.error('Error sending email:', emailError);
-            // Continue processing or handle error as per your application's needs
-          }
+    try {
+   
+      upload.single('file')(req, res, async (err) => {
+        if (err) {
+          console.error('File upload error:', err);
+          return res.status(500).json({ success: false, error: 'File upload failed.' });
         }
-
-        res.status(201).json({ success: true, memo });
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-        res.status(500).json({ success: false, error: 'Failed to create memo.' });
-      }
-    });
-  } catch (uploadError) {
-    console.error('Upload error:', uploadError);
-    res.status(500).json({ success: false, error: 'Failed to upload file.' });
-  }
-};
-
+  
+        if (!req.file) {
+          return res.status(400).json({ success: false, error: 'No file uploaded.' });
+        }
+  
+        if (req.file.mimetype !== 'application/pdf') {
+          console.error('Unsupported file type:', req.file.mimetype);
+          return res.status(400).json({ success: false, error: 'Only PDF files are supported.' });
+        }
+  
+        const token = req.body.token;
+        const decoded = jwt.verify(token, jwt_key);
+        const user = await User.findById(decoded.id);
+  
+        if (!user) {
+          return res.status(404).json({ success: false, error: 'User not found.' });
+        }
+  
+        const file = req.file;
+        const senderName = user.name;
+        const senderEmail = req.body.senderEmail || user.email; // Allow override of sender email
+        const content = req.file.filename;
+        const recipients = JSON.parse(req.body.recipients);
+        const title = req.body.title;
+        const startAt = req.body.startDate;
+        const endAt = req.body.endDate;
+  
+        if (!senderName || !senderEmail || !startAt || !endAt) {
+          return res.status(400).json({ success: false, error: 'Sender email, name, start date, and end date are required.' });
+        }
+  
+        const formattedStartAt = formatDateTime(startAt);
+        const formattedEndAt = formatDateTime(endAt);
+  
+        try {
+          // Send emails to all recipients before creating the memo
+          for (const recipient of recipients) {
+            const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+            const utf8Subject = `=?utf-8?B?${Buffer.from('New Memo Notification').toString('base64')}?=`;
+            const messageParts = [
+              `From: <${senderEmail}>`,
+              `To: ${recipient.useremail}`,
+              'Content-Type: text/html; charset=utf-8',
+              'MIME-Version: 1.0',
+              `Subject: ${utf8Subject}`,
+              '',
+              `Hello ${recipient.username},<br><br>This is to notify you that a new memo titled "${title}" has been created by ${senderName} (${senderEmail}).<br><br>Effective Dates:<br>Start Date: ${formattedStartAt}<br>End Date: ${formattedEndAt}<br><br>Please log in to the system at <a href="${process.env.URL}">${process.env.URL}</a> to view the details.<br><br>Thank you.`,
+            ];
+            const message = messageParts.join('\n');
+  
+            try {
+              await gmail.users.messages.send({
+                userId: 'me', // Use 'me' to indicate the authenticated user
+                requestBody: {
+                  raw: Buffer.from(message).toString('base64'),
+                },
+              });
+            
+            } catch (emailError) {
+           
+              return res.status(500).json({ success: false, error: 'Failed to send email .' });
+            }
+          }
+  
+          const memo = await Memo.create({
+            sender: senderName,
+            senderEmail,
+            content,
+            title,
+            startAt,
+            endAt,
+            recipients,
+            fileId: new ObjectId(file.id),
+          });
+  
+          for (const recipient of recipients) {
+            await Notification.create({
+              recipientEmail: recipient.useremail,
+              recipientName: recipient.username,
+              senderEmail,
+              senderName: senderName,
+              type: 'New Memo',
+              memoId: memo._id,
+            });
+          }
+  
+          res.status(201).json({ success: true, memo });
+        } catch (dbError) {
+   
+          res.status(500).json({ success: false, error: 'Failed to create memo.' });
+        }
+      });
+    } catch (uploadError) {
+    
+      res.status(500).json({ success: false, error: 'Failed to upload file.' });
+    }
+  };
 // details of received memo for the recipient
 exports.memodetails = async (req, res) => {
   const { memoId } = req.params;
