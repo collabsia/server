@@ -32,7 +32,7 @@ userSchema.methods.webtokenjwt = function() {
   return webtoken.sign(
     { id: this.id },
     process.env.JWT_SECRET,
-    { expiresIn: '10s' } 
+    { expiresIn: '1h' } 
   );
 };
 
